@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 # Attempt to load Pygame for audio, gracefully fallback if not installed
 try:
     import pygame
-    pygame.mixer.init()
+    pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
     AUDIO_ENABLED = True
 except ImportError:
     AUDIO_ENABLED = False
@@ -222,7 +222,7 @@ class DungeonPixelApp:
         self.clear_window()
         frame = tk.Frame(self.root, bg="#1a120b", bd=3, relief=tk.RAISED)
         frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        tk.Label(frame, text="† CUSTOM DUNGEON CREATOR †", font=("Courier", 14, "bold"), fg="#00ffcc", bg="#1a120b", pady=10).pack()
+        tk.Label(frame, text="† CUSTOM DUNGEON †", font=("Courier", 14, "bold"), fg="#00ffcc", bg="#1a120b", pady=10).pack()
 
         form_frame = tk.Frame(frame, bg="#1a120b")
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20)
