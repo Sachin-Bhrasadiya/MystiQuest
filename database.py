@@ -4,18 +4,16 @@ import hashlib
 DB_NAME = "MystiQuest.db"
 
 def hash_password(password):
-    """Cryptographic hashing for security requirements."""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def get_connection():
-    """Returns a new SQLite database connection."""
     return sqlite3.connect(DB_NAME)
 
 def init_database():
     conn = get_connection()
     cursor = conn.cursor()
 
-    # TABLE 1: Users (Tracks authentication and live session state)
+    # TABLE 1: Users 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +26,7 @@ def init_database():
         )
     """)
     
-    # TABLE 2: Quests (Combines Quest metadata and Sequential Riddles into one table)
+    # TABLE 2: Quests (Combines Quest metadata and Sequential Riddles)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS quests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +41,7 @@ def init_database():
         )
     """)
 
-    # TABLE 3: Score History (Logs completed runs and holds dynamically triggered Badges)
+    # TABLE 3: Score History 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS score_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +54,6 @@ def init_database():
         )
     """)
 
-    # SQL TRIGGER 1: Award badge for a flawless run, explicitly marking which Quest ID it came from
     cursor.execute("""
         CREATE TRIGGER IF NOT EXISTS trg_badge_flawless
         AFTER INSERT ON score_history
@@ -71,7 +68,6 @@ def init_database():
         END;
     """)
 
-    # SQL TRIGGER 2: Award badge after completing 3 quests, marking the Quest ID that triggered the milestone
     cursor.execute("""
         CREATE TRIGGER IF NOT EXISTS trg_badge_veteran
         AFTER INSERT ON score_history
@@ -86,22 +82,36 @@ def init_database():
         END;
     """)
 
-    # Seed Default Sequential Quests
     cursor.execute("SELECT COUNT(*) FROM quests")
     if cursor.fetchone()[0] == 0:
-        # Format: quest_id, title, creator_id, step, room_name, riddle, answer, reward
         q_data = [
+            # QUEST 1: THE CRYPT OF WHISPERS
             (1, "The Crypt of Whispers", None, 1, "Iron Gate", "I chill you to the bone. What am I?", "draft", "🗝️ Iron Key"),
             (1, "The Crypt of Whispers", None, 2, "Altar of Bones", "Count the skulls: 3 rows of 4, plus 2 hidden. How many?", "14", "📜 Scroll"),
-            (1, "The Crypt of Whispers", None, 3, "Vault (EXIT)", "Sum of 10 + 15 * 2:", "40", "💎 Ruby"),
+            (1, "The Crypt of Whispers", None, 3, "Executioner's Pit", "I hang by a single rope and swing. What am I?", "pendulum", "🪓 Axe"),
+            (1, "The Crypt of Whispers", None, 4, "Crypt Master's Tomb", "Speak the word of awakening: REST", "rest", "🛡️ Shield"),
+            (1, "The Crypt of Whispers", None, 5, "Vault (EXIT)", "Sum of 10 + 15 * 2:", "40", "💎 Ruby"),
 
+            # QUEST 2: THE SUNKEN VAULT
             (2, "The Sunken Vault", None, 1, "Sewer Grate", "I flow endlessly through dark tunnels. What am I?", "water", "💧 Flask"),
-            (2, "The Sunken Vault", None, 2, "Aqueduct Core", "To stop the flooding, enter the boiling point of water in Celsius:", "100", "🔱 Trident Shard"),
-            (2, "The Sunken Vault", None, 3, "Water Temple Altar (EXIT)", "Enter the number of sides on a triangle:", "3", "💠 Blue Pearl"),
+            (2, "The Sunken Vault", None, 2, "Sunken Library", "Water ruined the parchment, but the numerical code remains visible: 707", "707", "📜 Waterlogged Tome"),
+            (2, "The Sunken Vault", None, 3, "Aqueduct Core", "To stop the flooding, enter the boiling point of water in Celsius:", "100", "🔱 Trident Shard"),
+            (2, "The Sunken Vault", None, 4, "The Flooded Bridge", "I have four legs when young, two in maturity, but here I swim. What am I?", "fish", "🐟 Scale"),
+            (2, "The Sunken Vault", None, 5, "Water Temple Altar (EXIT)", "Enter the number of sides on a triangle:", "3", "💠 Blue Pearl"),
 
+            # QUEST 3: THE DRAGON'S LAIR
             (3, "The Dragon's Lair", None, 1, "Obsidian Gates", "I melt under dragon breath but outlast steel in frost. What volcanic glass am I?", "obsidian", "💎 Black Gem"),
-            (3, "The Dragon's Lair", None, 2, "Throne of Ashes", "To claim the crown, enter the final password: DRAGON", "dragon", "👑 Sovereign Crown"),
-            (3, "The Dragon's Lair", None, 3, "The Molten Bridge (EXIT)", "Enter the temperature threshold in hundreds: 500 or ...?", "1000", "🔥 Flame Essence")
+            (3, "The Dragon's Lair", None, 2, "Hoard Chamber", "Count the gold coins stacked: 50 piled high, 20 scattered. Total:", "70", "💰 Dragon Coin"),
+            (3, "The Dragon's Lair", None, 3, "Throne of Ashes", "To claim the crown, enter the final password: DRAGON", "dragon", "👑 Sovereign Crown"),
+            (3, "The Dragon's Lair", None, 4, "Dragon's Nursery", "I am born from fire wrapped in hard shell. What am I?", "egg", "🥚 Dragon Egg"),
+            (3, "The Dragon's Lair", None, 5, "The Molten Bridge (EXIT)", "Enter the temperature threshold in hundreds: 500 or ...?", "1000", "🔥 Flame Essence"),
+            
+            # QUEST 4: THE ALCHEMIST'S RESCUE
+            (4, "The Alchemist's Rescue", None, 1, "The Guardhouse", "I speak without a mouth and hear without ears. What am I?", "echo", "🗝️ Cell Key"),
+            (4, "The Alchemist's Rescue", None, 2, "Torture Chamber", "The hostage is bleeding! Quick: What is always coming but never arrives?", "tomorrow", "🩸 Bandage"),
+            (4, "The Alchemist's Rescue", None, 3, "Alchemist's Study", "I have a neck but no head, and I wear a cap. What am I?", "bottle", "🧪 Empty Flask"),
+            (4, "The Alchemist's Rescue", None, 4, "Potion Storage", "I am a metal that is liquid at room temperature. What am I?", "mercury", "⚗️ Quicksilver"),
+            (4, "The Alchemist's Rescue", None, 5, "Execution Block (EXIT)", "I am not alive, but I grow. Water kills me. What am I?", "fire", "✨ Soul Gem")
         ]
         
         cursor.executemany("""
@@ -148,7 +158,6 @@ def save_custom_quest(creator_id, title, riddles_list):
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Dynamically find the next available quest_id
     cursor.execute("SELECT MAX(quest_id) FROM quests")
     max_id = cursor.fetchone()[0]
     new_quest_id = (max_id + 1) if max_id else 1
@@ -203,7 +212,6 @@ def get_room_data(quest_id, step_number):
     return row
 
 def get_user_badges(user_id):
-    """Fetches all badges a user has earned directly from their score_history logs."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT badge_earned FROM score_history WHERE user_id = ? AND badge_earned != 'None'", (user_id,))
@@ -240,7 +248,6 @@ def complete_quest(user_id, quest_id, score):
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Inserting the score will automatically trigger the SQL Badges to be appended in Table 3
     cursor.execute("INSERT INTO score_history (user_id, quest_id, final_score) VALUES (?, ?, ?)", (user_id, quest_id, score))
     cursor.execute("UPDATE users SET active_quest_id = NULL, current_step = NULL WHERE id = ?", (user_id,))
     
